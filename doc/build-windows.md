@@ -42,7 +42,7 @@ If you want to build the windows installer with `make deploy` you need [NSIS](ht
 
 Acquire the source in the usual way:
 
-   git clone https://github.com/Viceversachain/viceversachain-core.git
+   git clone https://github.com/Viceversachain/Viceversachain-core.git
     cd viceversachain-core
 
 ## Building for 64-bit Windows
