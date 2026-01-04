@@ -58,7 +58,7 @@ Now that all the required dependencies are installed, let's clone the Viceversac
 All build scripts and commands will run from this directory.
 
 ``` bash
-git clone https://github.com/Viceversachain/viceversachain-core.git
+git clone https://github.com/Viceversachain/Viceversachain-core.git
 ```
 
 ### 5. Install Optional Dependencies
@@ -97,7 +97,7 @@ brew install qt@5
 ```
 
 Note: Building with Qt binaries downloaded from the Qt website is not officially supported.
-See the notes in [#7714](https://github.com/viceversachain/viceversachain/issues/7714).
+See the notes in [#7714](https://github.com/viceversachain/Viceversachain/issues/7714).
 
 ###### qrencode
 
