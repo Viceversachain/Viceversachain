@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+#
+#  viceversachaind The viceversachain core server.
+#
+#
+# chkconfig: 345 80 20
+# description: viceversachaind
+# processname: viceversachaind
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+# you can override defaults in /etc/sysconfig/viceversachaind, see below
+if [ -f /etc/sysconfig/viceversachaind ]; then
+        . /etc/sysconfig/viceversachaind
+fi
+
+RETVAL=0
+
+prog=viceversachaind
+# you can override the lockfile via BITCOIND_LOCKFILE in /etc/sysconfig/viceversachaind
+lockfile=${BITCOIND_LOCKFILE-/var/lock/subsys/viceversachaind}
+
+# viceversachaind defaults to /usr/bin/viceversachaind, override with BITCOIND_BIN
+viceversachaind=${BITCOIND_BIN-/usr/bin/viceversachaind}
+
+# viceversachaind opts default to -disablewallet, override with BITCOIND_OPTS
+viceversachaind_opts=${BITCOIND_OPTS--disablewallet}
+
+start() {
+    echo -n $"Starting $prog: "
+    daemon $DAEMONOPTS $viceversachaind $viceversachaind_opts
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && touch $lockfile
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    killproc $prog -t600
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && rm -f $lockfile
+    return $RETVAL
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status $prog
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: service $prog {start|stop|status|restart}"
+        exit 1
+        ;;
+esac
