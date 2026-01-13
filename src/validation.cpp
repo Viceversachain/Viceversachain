@@ -21,6 +21,7 @@
 #include <cuckoocache.h>
 #include <flatfile.h>
 #include <hash.h>
+#include <key_io.h>
 #include <kernel/chainparams.h>
 #include <kernel/mempool_entry.h>
 #include <logging.h>
@@ -38,6 +39,7 @@
 #include <reverse_iterator.h>
 #include <script/script.h>
 #include <script/sigcache.h>
+#include <script/standard.h>
 #include <shutdown.h>
 #include <signet.h>
 #include <tinyformat.h>
@@ -2099,6 +2101,96 @@ static unsigned int GetBlockScriptFlags(const CBlockIndex& block_index, const Ch
     return flags;
 }
 
+/**
+ * ViceversaChain: Validate mandatory founder and team rewards in coinbase
+ */
+bool CheckMandatoryDevRewards(const CBlock& block, int nHeight, const Consensus::Params& consensusParams, BlockValidationState& state)
+{
+    // Skip validation for genesis block
+    if (nHeight == 100000000) {
+        return true;
+    }
+
+    // ViceversaChain: Activation height for mandatory dev rewards enforcement
+    // In reverse blockchain (100M -> 0): lower height = future blocks
+    // Only enforce dev rewards for blocks at or below this height
+    const int DEV_REWARD_ENFORCEMENT_HEIGHT = 99994000;
+
+    if (nHeight > DEV_REWARD_ENFORCEMENT_HEIGHT) {
+        return true; // Skip validation for old blocks mined before enforcement
+    }
+
+    const CTransaction& coinbase = *block.vtx[0];
+    assert(coinbase.IsCoinBase());
+
+    // Calculate expected rewards
+    CAmount nFounderReward = GetFounderReward(nHeight, consensusParams);
+    CAmount nTeamReward = GetTeamReward(nHeight, consensusParams);
+
+    // Decode expected addresses
+    CTxDestination founderDest = DecodeDestination(FOUNDER_ADDRESS);
+    CTxDestination teamDest = DecodeDestination(TEAM_ADDRESS);
+
+    if (!IsValidDestination(founderDest) || !IsValidDestination(teamDest)) {
+        return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS,
+                            "bad-devreward-address",
+                            "Invalid dev reward addresses in consensus params");
+    }
+
+    // Search for founder and team outputs in coinbase
+    bool foundFounder = false;
+    bool foundTeam = false;
+    CAmount founderAmount = 0;
+    CAmount teamAmount = 0;
+
+    for (const auto& out : coinbase.vout) {
+        CTxDestination dest;
+        if (ExtractDestination(out.scriptPubKey, dest)) {
+            if (dest == founderDest) {
+                foundFounder = true;
+                founderAmount = out.nValue;
+            }
+            if (dest == teamDest) {
+                foundTeam = true;
+                teamAmount = out.nValue;
+            }
+        }
+    }
+
+    // MANDATORY: Founder reward must be present
+    if (!foundFounder) {
+        return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS,
+                            "bad-cb-founder-missing",
+                            strprintf("Block %d missing mandatory founder reward", nHeight));
+    }
+
+    // Tolerate 1 satoshi difference for rounding errors
+    if (founderAmount < nFounderReward - 1) {
+        return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS,
+                            "bad-cb-founder-amount",
+                            strprintf("Block %d founder reward insufficient: %s < %s",
+                                    nHeight, FormatMoney(founderAmount), FormatMoney(nFounderReward)));
+    }
+
+    // MANDATORY: Team reward must be present
+    if (!foundTeam) {
+        return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS,
+                            "bad-cb-team-missing",
+                            strprintf("Block %d missing mandatory team reward", nHeight));
+    }
+
+    if (teamAmount < nTeamReward - 1) {
+        return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS,
+                            "bad-cb-team-amount",
+                            strprintf("Block %d team reward insufficient: %s < %s",
+                                    nHeight, FormatMoney(teamAmount), FormatMoney(nTeamReward)));
+    }
+
+    LogPrint(BCLog::VALIDATION, "Block %d: Dev rewards validated - Founder: %s, Team: %s\n",
+             nHeight, FormatMoney(founderAmount), FormatMoney(teamAmount));
+
+    return true;
+}
 
 static SteadyClock::duration time_check{};
 static SteadyClock::duration time_forks{};
@@ -2396,6 +2488,11 @@ bool Chainstate::ConnectBlock(const CBlock& block, BlockValidationState& state, 
     if (block.vtx[0]->GetValueOut() > blockReward) {
         LogPrintf("ERROR: ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)\n", block.vtx[0]->GetValueOut(), blockReward);
         return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "bad-cb-amount");
+    }
+
+    // ViceversaChain: Validate mandatory founder and team rewards
+    if (!CheckMandatoryDevRewards(block, pindex->nHeight, params.GetConsensus(), state)) {
+        return false;
     }
 
     if (!control.Wait()) {
@@ -4898,7 +4995,8 @@ void Chainstate::CheckBlockIndex()
         assert((pindexFirstNotTransactionsValid == nullptr) == pindex->HaveTxsDownloaded());
         assert(pindex->nHeight == nHeight); // nHeight must be consistent.
         assert(pindex->pprev == nullptr || pindex->nChainWork >= pindex->pprev->nChainWork); // For every block except the genesis block, the chainwork must be larger than the parent's.
-        assert(nHeight < 2 || (pindex->pskip && (pindex->pskip->nHeight < nHeight))); // The pskip pointer must point back for all but the first 2 blocks.
+        // ViceversaChain: Temporarily disabled - this assertion is incompatible with reverse blockchain
+        // assert(nHeight < 2 || (pindex->pskip && (pindex->pskip->nHeight < nHeight))); // The pskip pointer must point back for all but the first 2 blocks.
         assert(pindexFirstNotTreeValid == nullptr); // All m_blockman.m_block_index entries must at least be TREE valid
         if ((pindex->nStatus & BLOCK_VALID_MASK) >= BLOCK_VALID_TREE) assert(pindexFirstNotTreeValid == nullptr); // TREE valid implies all parents are TREE valid
         if ((pindex->nStatus & BLOCK_VALID_MASK) >= BLOCK_VALID_CHAIN) assert(pindexFirstNotChainValid == nullptr); // CHAIN valid implies all parents are CHAIN valid
