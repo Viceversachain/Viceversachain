@@ -172,13 +172,8 @@ public:
         // service bits we want, but we should get them updated to support all service bits wanted by any
         // release ASAP to avoid it where possible.
 
-        vSeeds.emplace_back("seed.viceversachain.org"); 
-        vSeeds.emplace_back("seed1.viceversachain.org");
-        vSeeds.emplace_back("seed2.viceversachain.org");
-        vSeeds.emplace_back("seed3.viceversachain.org");
-        vSeeds.emplace_back("94.156.35.84"); 
-        vSeeds.emplace_back("193.37.212.154");
-        vSeeds.emplace_back("46.224.148.134");
+        
+        vSeeds.emplace_back("94.156.144.33");
         
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,70);
@@ -200,9 +195,7 @@ public:
         checkpointData = {
             {
                 { 100000000, uint256S("0x00000000ed7c33729f39094d3fa4e362cec181b7f05e3c53adeb097fc784f6bf")},
-                { 99999000, uint256S("0x000000000006e0a67361bf32342f2238e5148660937ee497ad8eea4699008b3b")},
-                { 99995856, uint256S("0x0000000000133c8fcb5272efb0cf48670cdf28634d83db3f07e21c02934de76d")},
-                { 99985809, uint256S("0x00000000000000d7f127f78d6ebe8a9d260a4a0ae34d21adb6ebc2f1547d7e4c")},
+                
             }
         };
 
