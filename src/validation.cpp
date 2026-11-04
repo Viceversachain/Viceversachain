@@ -2114,7 +2114,7 @@ bool CheckMandatoryDevRewards(const CBlock& block, int nHeight, const Consensus:
     // ViceversaChain: Activation height for mandatory dev rewards enforcement
     // In reverse blockchain (100M -> 0): lower height = future blocks
     // Only enforce dev rewards for blocks at or below this height
-    const int DEV_REWARD_ENFORCEMENT_HEIGHT = 99994000;
+    const int DEV_REWARD_ENFORCEMENT_HEIGHT = 99999999;
 
     if (nHeight > DEV_REWARD_ENFORCEMENT_HEIGHT) {
         return true; // Skip validation for old blocks mined before enforcement
