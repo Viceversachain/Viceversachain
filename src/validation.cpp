@@ -1597,8 +1597,8 @@ CAmount GetMinerReward(int nHeight, const Consensus::Params& consensusParams)
 }
 
 // ViceversaChain: Addresses for reward distribution (exported for miner.cpp)
-extern const std::string FOUNDER_ADDRESS = "vive1qznp34576pqttj5utkl84nfhkeegalcj6zmf8jz";
-extern const std::string TEAM_ADDRESS = "vive1qlphfpsmaqufgz932lscz7fl64yke650t7ccxsu";
+extern const std::string FOUNDER_ADDRESS = "vive1qa09q7qalunlf5w2nrp4tufh2wpsvkge4wuverj";
+extern const std::string TEAM_ADDRESS = "vive1q2k2k5daqsvlmycrargn0xu45u8ks0slws6gwlg";
 
 CoinsViews::CoinsViews(DBParams db_params, CoinsViewOptions options)
     : m_dbview{std::move(db_params), std::move(options)},
